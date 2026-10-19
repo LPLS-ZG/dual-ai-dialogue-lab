@@ -1,0 +1,12 @@
+const fs=require('fs'),path=require('path'),assert=require('assert');
+const root=__dirname, content=fs.readFileSync(path.join(root,'install/content.js'),'utf8'), side=fs.readFileSync(path.join(root,'install/sidepanel.js'),'utf8'), manifest=JSON.parse(fs.readFileSync(path.join(root,'install/manifest.json'),'utf8'));
+assert.ok(manifest.version.localeCompare('0.10.6') >= 0, '版本应不低于 0.10.6');
+assert(content.includes('const diagnosticBuckets = {'));
+assert(content.includes('diagnosticNodes:(r?.diagnosticNodes || []).slice(0,14)'));
+assert(content.includes("'page-upload-error'"));
+assert(content.includes("'initial-evidence-disappeared'"));
+assert(side.includes('故障分类=${evidenceDiagnostics.failureClass}'));
+assert(!side.includes('JSON.stringify(evidenceDiagnostics).slice(0, 7000)'));
+assert(side.includes('boundedEvidenceJson(evidenceDiagnostics)'));
+assert(side.includes('人工目视确认'));
+console.log('v0.10.6 regression checks passed');

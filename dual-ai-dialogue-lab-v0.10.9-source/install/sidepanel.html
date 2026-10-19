@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>双 AI 对话实验室</title>
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+  <header>
+    <div class="eyebrow">RAW FILE RELAY · 0.9.6</div>
+    <h1>双 AI 对话实验室</h1>
+    <p class="sub">原始文件投递 · 双 AI 接力 · 本地记录</p>
+  </header>
+
+  <section class="notice">
+    <strong>实验版提示</strong>
+    <p>需要在电脑 Chrome / Edge 中安装扩展，并先打开、登录 ChatGPT 与 DeepSeek。资料库只保存原始文件；开始讨论并确认后，扩展会尝试把所选原文件分别附加到两个 AI 网页，再发送消息。网页上传结构或文件限制变化时，自动投递可能失败；插件会暂停本轮并提示手动补传，不会假装文件已成功上传。文件会发送给相应 AI 服务商，请勿选择不希望上传的敏感文件。</p>
+  </section>
+
+  <section class="panel">
+    <label for="chatgptTab">ChatGPT 标签页</label>
+    <div class="selectrow"><select id="chatgptTab"></select><button id="refreshTabs" class="secondary">刷新</button></div>
+    <div id="chatgptStatus" class="status">尚未检测</div>
+    <label for="deepseekTab">DeepSeek 标签页</label>
+    <select id="deepseekTab"></select>
+    <div id="deepseekStatus" class="status">尚未检测</div>
+  </section>
+
+  <section class="panel materialsPanel">
+    <div class="materialsHeader">
+      <div><h2>资料文件</h2><p class="mutedSmall">保存原文件；不做本地 OCR 或文本提取</p></div>
+      <button id="refreshMaterials" class="secondary">刷新</button>
+    </div>
+    <input id="fileInput" type="file" multiple hidden>
+    <div id="materialDropZone" class="materialDropZone" role="region" aria-label="资料文件拖放导入区" aria-dropeffect="copy">
+      <div class="dropSymbol" aria-hidden="true">↓</div>
+      <div class="dropTitle">把资料文件拖到这里</div>
+      <div class="dropHint">拖入原文件；可多选。实际可否解析由目标 AI 网页的支持范围决定</div>
+    </div>
+    <div class="buttons materialButtons"><button id="uploadMaterials" class="primary">选择资料文件</button><button id="clearMaterials" class="secondary">清空资料库</button></div>
+    <label class="check"><input id="confirmExternalUpload" type="checkbox"> 我确认将所选原始文件上传到 ChatGPT 和 DeepSeek 网页</label>
+    <div id="materialsStatus" class="status">文件仅保存在本机。勾选文件并明确确认后，才会尝试向网页 AI 上传原件。</div>
+    <div id="materialsList" class="materialsList"><p class="empty">还没有资料。可先上传赛题、参考论文或数据集。</p></div>
+  </section>
+
+  <section class="panel">
+    <label for="topic">讨论主题 / 初始任务</label>
+    <textarea id="topic" rows="5" placeholder="例如：请讨论 AI 辅助编程是否会削弱初学者的基础能力，并提出各自的理由。"></textarea>
+    <label for="conversationMode">聊天模式</label>
+    <select id="conversationMode" aria-describedby="modeHelp">
+      <option value="free" selected>自由交流</option>
+      <option value="task">任务执行</option>
+      <option value="explore">探索讨论</option>
+      <option value="custom">自定义</option>
+    </select>
+    <p id="modeHelp" class="mutedSmall">自然聊天、允许联想和发散；不强制提问、总结或固定格式。</p>
+    <label id="guidanceLabel" for="discussionGuidance">持续对话要求（可选，每轮都会保留）</label>
+    <textarea id="discussionGuidance" class="discussionGuidance" rows="3" placeholder="例如：人文一点，深入但自然；每轮先回应对方的具体观点，少提问题，不要重复总结或写成报告。"></textarea>
+    <p class="mutedSmall">这里记录你希望 AI 一直遵守的语气、深度、篇幅和格式要求；会保存到本机，并出现在对话记录中。</p>
+    <div class="grid2">
+      <div>
+        <label for="firstSpeaker">先发言</label>
+        <select id="firstSpeaker"><option value="chatgpt">ChatGPT</option><option value="deepseek">DeepSeek</option></select>
+      </div>
+      <div>
+        <label for="rounds">回答次数</label>
+        <select id="rounds">
+          <option value="2">2 次回答</option>
+          <option value="4" selected>4 次回答</option>
+          <option value="6">6 次回答</option>
+          <option value="custom">手动输入偶数</option>
+          <option value="unlimited">不限制</option>
+        </select>
+      </div>
+    </div>
+    <div id="customRoundsWrap" class="customRoundsWrap" hidden>
+      <label for="customRounds">自定义回答次数（必须为偶数）</label>
+      <input id="customRounds" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="15" value="12" autocomplete="off" spellcheck="false" aria-describedby="roundsHelp">
+      <p id="roundsHelp" class="mutedSmall">请输入大于或等于 2 的偶数，例如 8、12、20。</p>
+    </div>
+    <label class="check"><input id="askToConclude" type="checkbox"> <span id="askToConcludeLabel">最后一轮改为总结报告（默认自然收尾）</span></label>
+    <p id="endingModeHelp" class="mutedSmall">任务执行模式会在最后一轮核对原始要求；轮次结束不等于任务已完成。</p>
+    <div class="sessionModeCard" aria-labelledby="sessionModeHeading">
+      <div class="sessionModeHeading">
+        <div class="sessionModeCopy">
+          <strong id="sessionModeHeading">会话模式</strong>
+          <p id="sessionModeHelp" class="mutedSmall">开启：开始任务前分别在 ChatGPT、DeepSeek 新建空白会话，隔离旧主题。关闭：直接沿用当前两个网页标签所在的对话；请先在网页打开你想继续的聊天。</p>
+        </div>
+        <label class="sessionModeSwitch" for="newChatPerRun">
+          <input id="newChatPerRun" type="checkbox" checked aria-describedby="sessionModeHelp">
+          <span class="sessionModeTrack" aria-hidden="true"></span>
+          <span id="sessionModeState" class="sessionModeState">新建独立会话</span>
+        </label>
+      </div>
+      <p class="mutedSmall sessionModeNote">关闭开关不会删除或清空历史聊天；会直接在当前两个网页打开的对话中继续。</p>
+    </div>
+    <div id="draftRecovery" class="draftRecovery" hidden>
+      <strong>网页未发送草稿已备份到本机</strong>
+      <p id="draftRecoverySummary" class="mutedSmall">恢复区只保存在此浏览器的扩展本地存储中，不会自动发给 AI。</p>
+      <label for="draftRecoverySelect">选择要查看的草稿</label>
+      <select id="draftRecoverySelect"></select>
+      <textarea id="draftRecoveryText" rows="4" readonly hidden aria-label="已备份的网页草稿内容"></textarea>
+      <div class="buttons">
+        <button id="toggleRecoveredDraft" class="secondary" type="button">查看草稿</button>
+        <button id="copyRecoveredDraft" class="secondary" type="button">复制草稿</button>
+        <button id="deleteRecoveredDraft" class="secondary" type="button">删除备份</button>
+      </div>
+    </div>
+    <div class="buttons runButtons"><button id="startBtn" class="primary">开始对话</button><button id="endBtn" class="secondary endAction" type="button" disabled title="当前回答完成后，再由下一位 AI 回答一次并结束接力流程；任务是否完成需单独核对">结束</button><button id="stopBtn" class="danger" disabled>停止</button></div>
+    <div id="manualAttachFallback" class="manualAttachFallback" hidden>
+      <strong>需要手动补齐并核验附件</strong>
+      <p id="manualAttachMessage" class="mutedSmall">自动投递未能确认所有文件已经显示在目标网页。</p>
+      <button id="manualAttachContinue" class="primary fullwidth" type="button">重新检查网页附件</button>
+      <label class="check manualVisualConfirm"><input id="manualAttachVisualConfirm" type="checkbox"> 我已在目标网页当前消息输入区亲眼确认显示全部指定文件，且没有“上传中”或失败提示。</label>
+      <button id="manualAttachVisualContinue" class="secondary fullwidth" type="button" disabled>按人工确认继续</button>
+    </div>
+  </section>
+
+  <section class="panel diagnosticsPanel">
+    <div class="transcriptHead"><h2>自动诊断</h2><div class="smallActions"><select id="diagnosticsScope" class="scopeSelect" aria-label="诊断范围"><option value="current" selected>当前任务</option><option value="all">全部诊断</option></select><button id="copyDiagnostics" class="secondary">复制诊断</button><button id="downloadDiagnostics" class="secondary">导出故障报告</button><button id="clearDiagnostics" class="secondary">清空</button></div></div>
+    <p class="mutedSmall">自动记录每轮发送、接收、接力和文件投递状态，并附任务 ID、轮次、阶段和任务内耗时。默认显示当前任务；需要排查多次运行时可切换“全部诊断”。点击“导出故障报告”可一键保存当前任务的诊断记录；切换为“全部诊断”后可导出全部记录。报告不包含完整对话正文或上传文件原文。</p>
+    <div id="diagnosticsSummary" class="status">尚无诊断记录。</div>
+    <div id="diagnosticsLog" class="diagnosticsLog"><p class="empty">开始对话或导入资料后，这里会显示步骤和错误原因。</p></div>
+  </section>
+
+  <section class="panel transcriptPanel">
+    <div class="transcriptHead"><h2>对话记录</h2><div class="smallActions"><select id="recordScope" class="scopeSelect" aria-label="记录范围"><option value="current" selected>当前任务</option><option value="all">全部任务</option></select><button id="copyLog" class="secondary">复制</button><button id="downloadLog" class="secondary">导出 .txt</button><button id="clearLog" class="secondary">清空</button></div></div>
+    <div id="runState" class="runstate">等待开始</div>
+    <p class="mutedSmall">对话按任务 ID 分组；默认只显示当前任务。切换“全部任务”可查看或导出历史任务，避免不同主题混在一起。</p>
+    <div id="transcript" class="transcript" aria-live="polite"><p class="empty">设置主题后，点击“开始对话”。</p></div>
+  </section>
+  <footer>所有转发都在本机浏览器中发起。请勿把密码、密钥或其他敏感信息作为讨论内容。</footer>
+  <script src="materials.js"></script>
+  <script src="sidepanel.js"></script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+'use strict';
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const root = __dirname;
+const content = fs.readFileSync(path.join(root, 'install/content.js'), 'utf8');
+const manifest = JSON.parse(fs.readFileSync(path.join(root, 'install/manifest.json'), 'utf8'));
+assert.ok(manifest.version.localeCompare('0.10.4') >= 0, '版本应不低于 0.10.4');
+assert.ok(content.includes('visible-composer-neighborhood'), 'must report local composer evidence source');
+assert.ok(content.includes('collectComposedElements'), 'must inspect composed DOM including open shadow roots');
+assert.ok(content.includes('el.shadowRoot'), 'must traverse open shadow roots');
+assert.ok(content.includes('allElements.filter'), 'must use composed DOM nodes for local status evidence');
+assert.ok(content.includes('localEvidenceByName[name]'), 'must allow visible local attachment evidence to bypass page-wide baseline undercount');
+assert.ok(content.includes('const scopeBox = (() =>'), 'must derive a composer-ancestor scope box instead of a fixed viewport offset');
+assert.ok(content.includes('const inScope = (r, pad = 320) =>'), 'must gate local evidence through the scope box');
+const norm = value => String(value || '').replace(/[（]/g, '(').replace(/[）]/g, ')').replace(/\s+/g, ' ').trim().toLocaleLowerCase();
+const escapeRegex = value => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const filenamePattern = name => {
+  const key = norm(name), dot = key.lastIndexOf('.');
+  const suffix = '(?:\\(\\s*(?:\\d{8}\\s+\\d{6}|\\d+)\\s*\\))?';
+  const body = dot > 0 ? `${escapeRegex(key.slice(0,dot))}\\s*${suffix}\\s*${escapeRegex(key.slice(dot))}${suffix}` : `${escapeRegex(key)}${suffix}`;
+  return new RegExp(`(?:^|[^a-z0-9._-])${body}(?=$|[^a-z0-9._-])`, 'i');
+};
+assert.ok(filenamePattern('A题.pdf').test(norm('A题（20261019 044718）.pdf')));
+assert.ok(filenamePattern('A题.pdf').test(norm('A题 (4).pdf')));
+assert.ok(!filenamePattern('A题.pdf').test(norm('B题（20261019 044718）.pdf')));
+console.log('v0.9.9 attachment evidence tests passed: filename alias and composer-local evidence path.');

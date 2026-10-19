@@ -1,0 +1,16 @@
+const fs = require('fs');
+const path = require('path');
+const assert = require('assert');
+const root = __dirname;
+const content = fs.readFileSync(path.join(root, 'install/content.js'), 'utf8');
+const sidepanel = fs.readFileSync(path.join(root, 'install/sidepanel.js'), 'utf8');
+const manifest = JSON.parse(fs.readFileSync(path.join(root, 'install/manifest.json'), 'utf8'));
+assert.ok(manifest.version.localeCompare('0.10.4') >= 0, '版本应不低于 0.10.4');
+assert(content.includes('immediateEvidence'));
+assert(content.includes('composerAttachmentEvidence(files.map(file => file.name), {})'));
+assert(content.includes('stillSameInput'));
+assert(content.includes('afterDispatch'));
+assert(sidepanel.includes('transferImmediateEvidence:assignment?.immediateEvidence || null'));
+assert(sidepanel.includes('事件后原生控件文件数='));
+assert(sidepanel.includes('transferNote:assignment?.note ||'));
+console.log('v0.10.3 telemetry tests passed: immediate post-dispatch evidence, input identity, afterDispatch diagnostics.');

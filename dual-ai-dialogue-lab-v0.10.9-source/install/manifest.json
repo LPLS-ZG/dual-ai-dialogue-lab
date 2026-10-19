@@ -1,0 +1,48 @@
+{
+  "manifest_version": 3,
+  "name": "双 AI 对话实验室",
+  "version": "0.10.9",
+  "description": "双 AI 网页对话接力：修复最后一轮仍在生成时就被判定完成（DeepSeek 思考态识别、静默门槛 15s/20s、finalTurn 贯通）。",
+  "permissions": [
+    "scripting",
+    "debugger",
+    "sidePanel",
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://chatgpt.com/*",
+    "https://*.chatgpt.com/*",
+    "https://chat.openai.com/*",
+    "https://*.openai.com/*",
+    "https://chat.deepseek.com/*",
+    "https://deepseek.com/*",
+    "https://*.deepseek.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "打开双 AI 对话实验室"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://*.chatgpt.com/*",
+        "https://chat.openai.com/*",
+        "https://*.openai.com/*",
+        "https://chat.deepseek.com/*",
+        "https://deepseek.com/*",
+        "https://*.deepseek.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

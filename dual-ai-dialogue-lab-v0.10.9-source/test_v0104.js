@@ -1,0 +1,17 @@
+const fs = require('fs');
+const path = require('path');
+const assert = require('assert');
+const root = __dirname;
+const content = fs.readFileSync(path.join(root, 'install/content.js'), 'utf8');
+const sidepanel = fs.readFileSync(path.join(root, 'install/sidepanel.js'), 'utf8');
+const manifest = JSON.parse(fs.readFileSync(path.join(root, 'install/manifest.json'), 'utf8'));
+assert.ok(manifest.version.localeCompare('0.10.4') >= 0, '版本应不低于 0.10.4');
+assert(content.includes('initialEvidence = null'));
+assert(content.includes('const hadImmediateUploadEvidence = initialMatched.length > 0'));
+assert(content.includes('!hadImmediateUploadEvidence && elapsed >= Math.min(cap, noEvidenceGrace)'));
+assert(content.includes('evidenceHistory.push(summarize(result, elapsed))'));
+assert(content.includes('attachments-vanished-after-upload'));
+assert(sidepanel.includes('initialEvidence:assignment?.immediateEvidence || null'));
+assert(sidepanel.includes('verificationHistory:verification?.evidenceHistory || []'));
+assert(sidepanel.includes('hadImmediateUploadEvidence:verification?.hadImmediateUploadEvidence === true'));
+console.log('v0.10.4 tests passed: immediate upload evidence suppresses premature no-evidence abort; state history is returned; stable confirmation remains required.');
